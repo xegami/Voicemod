@@ -7,13 +7,23 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import java.text.DecimalFormat
 
+/**
+ * @author Enmanuel (Xegami) Dominguez
+ * Calculadora capaz de realizar cualquier operacion basica (y con decimales)
+ * He tratado de hacer el codigo en la menor cantidad de lineas posible, aunque seguro tiene abanico para mejoras
+ * En cuanto a mantenimiento y escalabilidad: he modularizado cada accion de la calculadora en diferentes funciones
+ * haciendo que solo tengan que llamarse desde el listener funcionando este como un controlador
+ * Ademas, para separar las operaciones matematicas de la logica, he creado una clase estatica (Operations.kt)
+ * dentro del mismo paquete.
+ */
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var operations: EditText
-    private var resultPressed: Boolean =
-        false // este switch nos permite saber si el usuario quiere empezar una nueva operacion o continuar con la anterior
-    private val df: DecimalFormat =
-        DecimalFormat("0.#") // evitamos decimales innecesarios (ej: 10.0)
+    // switch que permite saber si el usuario quiere empezar una nueva operacion o continuar con la anterior
+    private var resultPressed: Boolean = false
+    // evitamos decimales innecesarios (ej: 10.0)
+    private val df: DecimalFormat = DecimalFormat("0.#")
+    private val operatorsRegex: Regex = Regex("([+])|([-])|([×])|([÷])")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +32,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         operations = findViewById(R.id.et_screen)
     }
 
-    // nos ponemos a la escucha de cualquier boton presionado
+    /**
+     * listener a la escucha de cualquier boton presionado
+     */
     override fun onClick(p0: View?) {
         when (p0!!.id) {
             R.id.btn_c -> et_screen.text.clear()
@@ -36,8 +48,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             R.id.btn_7 -> appendNumber("7")
             R.id.btn_8 -> appendNumber("8")
             R.id.btn_9 -> appendNumber("9")
-            R.id.btn_plus -> appendOperator("+")
-            R.id.btn_minus -> appendOperator("-")
+            R.id.btn_add -> appendOperator("+")
+            R.id.btn_subtract -> appendOperator("-")
             R.id.btn_multiply -> appendOperator("×")
             R.id.btn_divide -> appendOperator("÷")
             R.id.btn_dot -> appendDot()
@@ -45,30 +57,39 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 resultPressed = true
                 operate()
             }
-            R.id.btn_backspace -> et_screen.setText(et_screen.text.dropLast(1))
+            R.id.btn_backspace -> backspace()
         }
     }
 
+    /**
+     * funcion basica donde se efectuan los calculos
+     */
     private fun operate() {
-        val numbers: List<String> = et_screen.text.split(Regex("([+])|([-])|([×])|([÷])"), 0)
+        if (!et_screen.text.contains(operatorsRegex)
+            || et_screen.text.endsWith(".")) return
+
+        val numbers: List<String> = et_screen.text.split(operatorsRegex, 0)
         if (numbers[0] == "" || numbers[1] == "") return
 
         when {
             et_screen.text.contains("+") -> et_screen.setText(
-                df.format(numbers[0].toDouble() + numbers[1].toDouble()).toString()
+                df.format(Operations.add(numbers[0].toDouble(), numbers[1].toDouble()))
             )
             et_screen.text.contains("-") -> et_screen.setText(
-                df.format(numbers[0].toDouble() - numbers[1].toDouble()).toString()
+                df.format(Operations.subtract(numbers[0].toDouble(), numbers[1].toDouble()))
             )
             et_screen.text.contains("×") -> et_screen.setText(
-                df.format(numbers[0].toDouble() * numbers[1].toDouble()).toString()
+                df.format(Operations.multiply(numbers[0].toDouble(), numbers[1].toDouble()))
             )
             et_screen.text.contains("÷") -> et_screen.setText(
-                df.format(numbers[0].toDouble() / numbers[1].toDouble()).toString()
+                df.format(Operations.divide(numbers[0].toDouble(), numbers[1].toDouble()))
             )
         }
     }
 
+    /**
+     * agrega un numero a la operacion
+     */
     private fun appendNumber(number: String) {
         // si el usuario quiso saber el resultado y no ha puesto ningun simbolo, reseteamos la pantalla
         if (resultPressed && et_screen.text.matches(Regex("^.*\\d$"))) et_screen.text.clear()
@@ -77,12 +98,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         et_screen.text.append(number)
     }
 
+    /**
+     * agrega un operador a la operacion
+     */
     private fun appendOperator(symbol: String) {
         resultPressed = false
 
         /* en caso de querer hacer operaciones consecutivas, habria que remover esta linea y
         operar solo con el boton de Result (realizando los debidos cambios a la funcion operate()) */
-        if (et_screen.text.contains(Regex("([+])|([-])|([×])|([÷])"))) operate()
+        if (et_screen.text.contains(operatorsRegex)) operate()
 
         // evitamos que se puedan poner simbolos consecutivos y lo reemplazamos en el caso de que se intente
         if (et_screen.text.matches(Regex("^.*\\d$"))) {
@@ -92,15 +116,25 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    // nos aseguramos de que no se pueden poner puntos seguidos ni junto a simbolos
+    /**
+     * agrega un punto decimal a la operacion
+     */
     private fun appendDot() {
-        if (et_screen.text.matches(Regex("^.*\\d$"))) {
-            if (et_screen.text.contains(".") && et_screen.text.contains(Regex("([+])|([-])|([×])|([÷])"))) {
-                val rightSide: String = et_screen.text.split(Regex("([+])|([-])|([×])|([÷])"), 0)[1]
+        // se controla que no se puedan poner varios puntos seguidos ni detras de simbolos
+        if (et_screen.text.matches(operatorsRegex)) {
+            if (et_screen.text.contains(".") && et_screen.text.contains(operatorsRegex)) {
+                val rightSide: String = et_screen.text.split(operatorsRegex, 0)[1]
                 if (!rightSide.contains(".")) et_screen.text.append(".")
             } else {
                 et_screen.text.append(".")
             }
         }
+    }
+
+    /**
+     * deshace un digito/simbolo
+     */
+    private fun backspace() {
+        et_screen.setText(et_screen.text.dropLast(1))
     }
 }
