@@ -4,8 +4,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import java.text.DecimalFormat
+import java.util.*
+import java.util.function.Predicate
+import kotlin.collections.ArrayList
 
 /**
  * @author Enmanuel (Xegami) Dominguez
@@ -19,11 +23,13 @@ import java.text.DecimalFormat
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var operations: EditText
+
     // switch que permite saber si el usuario quiere empezar una nueva operacion o continuar con la anterior
-    private var resultPressed: Boolean = false
+    private var resultPressed = false
+
     // evitamos decimales innecesarios (ej: 10.0)
-    private val df: DecimalFormat = DecimalFormat("0.#")
-    private val operatorsRegex: Regex = Regex("([+])|([-])|([×])|([÷])")
+    private val df = DecimalFormat("0.#")
+    private val operatorsRegex = Regex("([+])|([-])|([×])|([÷])")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +64,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 operate()
             }
             R.id.btn_backspace -> backspace()
+            R.id.btn_parenthesis -> snack("Not implemented yet.")
+            R.id.btn_percent -> snack("Not implemented yet.")
         }
     }
 
@@ -66,10 +74,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      */
     private fun operate() {
         if (!et_screen.text.contains(operatorsRegex)
-            || et_screen.text.endsWith(".")) return
+            || et_screen.text.endsWith(".")
+        ) return
 
-        val numbers: List<String> = et_screen.text.split(operatorsRegex, 0)
-        if (numbers[0] == "" || numbers[1] == "") return
+        val numbers = ArrayList(et_screen.text.split(operatorsRegex, 0))
+        numbers.removeAll(listOf(null, ""))
+
+        if (numbers.size < 2) return
 
         when {
             et_screen.text.contains("+") -> et_screen.setText(
@@ -121,11 +132,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      */
     private fun appendDot() {
         // se controla que no se puedan poner varios puntos seguidos ni detras de simbolos
-        if (et_screen.text.matches(operatorsRegex)) {
-            if (et_screen.text.contains(".") && et_screen.text.contains(operatorsRegex)) {
-                val rightSide: String = et_screen.text.split(operatorsRegex, 0)[1]
-                if (!rightSide.contains(".")) et_screen.text.append(".")
-            } else {
+        if (!et_screen.text.contains(".")) {
+            et_screen.text.append(".")
+        } else if (et_screen.text.contains(operatorsRegex)) {
+            val rightSide: String = et_screen.text.split(operatorsRegex, 0)[1]
+            if (!rightSide.contains(".")) {
                 et_screen.text.append(".")
             }
         }
@@ -136,5 +147,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      */
     private fun backspace() {
         et_screen.setText(et_screen.text.dropLast(1))
+    }
+
+    private fun snack(message: String) {
+        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show()
     }
 }
