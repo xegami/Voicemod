@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * listener a la escucha de cualquier boton presionado
      */
     override fun onClick(p0: View?) {
-        when (p0!!.id) {
+        when (p0?.id) {
             R.id.btn_c -> et_screen.text.clear()
             R.id.btn_0 -> appendNumber("0")
             R.id.btn_1 -> appendNumber("1")
@@ -73,14 +73,18 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * funcion basica donde se efectuan los calculos
      */
     private fun operate() {
+        var isNegative = false
         if (!et_screen.text.contains(operatorsRegex)
             || et_screen.text.endsWith(".")
         ) return
+
+        if (et_screen.text.startsWith("-")) isNegative = true
 
         val numbers = ArrayList(et_screen.text.split(operatorsRegex, 0))
         numbers.removeAll(listOf(null, ""))
 
         if (numbers.size < 2) return
+        if (isNegative) numbers[0] = "-" + numbers[0]
 
         when {
             et_screen.text.contains("+") -> et_screen.setText(
@@ -135,7 +139,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (!et_screen.text.contains(".")) {
             et_screen.text.append(".")
         } else if (et_screen.text.contains(operatorsRegex)) {
-            val rightSide: String = et_screen.text.split(operatorsRegex, 0)[1]
+            val rightSide = et_screen.text.split(operatorsRegex, 0)[1]
             if (!rightSide.contains(".")) {
                 et_screen.text.append(".")
             }
