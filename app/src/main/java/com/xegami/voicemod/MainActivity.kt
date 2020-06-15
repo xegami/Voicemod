@@ -3,14 +3,10 @@ package com.xegami.voicemod
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import java.text.DecimalFormat
-import java.util.*
-import java.util.function.Predicate
-import kotlin.collections.ArrayList
 
 /**
  * @author Enmanuel (Xegami) Dominguez
@@ -90,15 +86,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         when {
             et_screen.text.contains("+") -> et_screen.setText(
                 df.format(Operations.add(numbers[0].toDouble(), numbers[1].toDouble()))
-            )
-            et_screen.text.contains("-") -> et_screen.setText(
-                df.format(Operations.subtract(numbers[0].toDouble(), numbers[1].toDouble()))
+                    .replace(",", ".")
             )
             et_screen.text.contains("×") -> et_screen.setText(
                 df.format(Operations.multiply(numbers[0].toDouble(), numbers[1].toDouble()))
+                    .replace(",", ".")
             )
             et_screen.text.contains("÷") -> et_screen.setText(
                 df.format(Operations.divide(numbers[0].toDouble(), numbers[1].toDouble()))
+                    .replace(",", ".")
+            )
+            et_screen.text.contains("-") -> et_screen.setText(
+                df.format(Operations.subtract(numbers[0].toDouble(), numbers[1].toDouble()))
+                    .replace(",", ".")
             )
         }
     }
